@@ -4,7 +4,7 @@
 .new : 新建给定类型的对象
     CLASS -> $expr$ $name*:camelCase(expr)$ = new $expr$();
 
-.new2 : 新建给定类型的对象
+.new222 : 新建给定类型的对象
     CLASS -> $expr$ $name*:camelCase(expr)$ = new $expr$();
 
 # start -*-*-*-*-*-*-*-*-*- 判空相关 -*-*-*-*-*-*-*-*-*- start
