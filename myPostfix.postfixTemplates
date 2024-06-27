@@ -1,0 +1,196 @@
+# 静态导入 [USE_STATIC_IMPORTS]
+# 变量定义 $NAME1#NO:suggestVariableName():DEFAULT_VALUE$
+
+.new : 新建给定类型的对象
+    CLASS -> $expr$ $name*:camelCase(expr)$ = new $expr$();
+
+.new1 : 新建给定类型的对象
+    CLASS -> $expr$ $name*:camelCase(expr)$ = new $expr$();
+
+# start -*-*-*-*-*-*-*-*-*- 判空相关 -*-*-*-*-*-*-*-*-*- start
+.ifNull : 如果为Null
+    java.util.Map -> [SKIP]
+    java.util.Collection -> [SKIP]
+    NON_VOID -> if(java.util.Objects.isNull($expr$)){\
+                    $END$\
+                }
+.ifNotNull : 如果不为Null
+    java.util.Map -> [SKIP]
+    java.util.Collection -> [SKIP]
+    NON_VOID -> if(java.util.Objects.nonNull($expr$)){\
+                    $END$\
+                }
+.ifEmpty : String、ARRAY、Collection、Map如果为空
+    java.lang.String     -> if(cn.hutool.core.util.StrUtil.isEmpty($expr$)){\
+                              $END$\
+                            }
+    ARRAY                -> if(cn.hutool.core.util.ArrayUtil.isEmpty($expr$)){\
+                              $END$\
+                            }
+    java.util.Collection -> if(cn.hutool.core.collection.CollUtil.isEmpty($expr$)){\
+                              $END$\
+                            }
+    java.util.Map        -> if(cn.hutool.core.map.MapUtil.isEmpty($expr$)){\
+                              $END$\
+                            }
+
+.ifNotEmpty : String、ARRAY、Collection、Map如果不为空
+    ARRAY                -> if(cn.hutool.core.util.ArrayUtil.isNotEmpty($expr$)){\
+                              $END$\
+                            }
+    java.lang.String     -> if(cn.hutool.core.util.StrUtil.isNotEmpty($expr$)){\
+                              $END$\
+                            }
+    java.util.Collection -> if(cn.hutool.core.collection.CollUtil.isNotEmpty($expr$)){\
+                              $END$\
+                            }
+    java.util.Map        -> if(cn.hutool.core.map.MapUtil.isNotEmpty($expr$)){\
+                              $END$\
+                            }
+# end -*-*-*-*-*-*-*-*-*- 判空相关 -*-*-*-*-*-*-*-*-*- end
+
+
+# start -*-*-*-*-*-*-*-*-*- Collection相关 -*-*-*-*-*-*-*-*-*- start
+.set : 生成给定类型的Set
+    CLASS -> java.util.Set<$expr$> $name:concat(camelCase(expr),"Set")$ = com.google.common.collect.Sets.newHashSet();
+.list : 生成给定类型的List
+    CLASS -> java.util.List<$expr$> $name:concat(camelCase(expr),"s")$ = com.google.common.collect.Lists.newArrayList();
+.toArray : Collection转数组
+    java.util.Collection -> $type*:iterableComponentType(expr)$[] $name#2:concat(camelCase(type),"Arr")$ = $expr$.toArray(new $type$[0]);
+.group : Collection分组
+    java.util.Collection -> java.util.Map<java.lang.String, java.util.List<$type*:iterableComponentType(expr)$>> $name#2:"name"$ = $expr$.stream()\
+                                .collect(java.util.stream.Collectors.groupingBy($type$::$valueType#1:"get"$));
+.sortAsc : Collection正序排序
+    java.util.Collection -> java.util.List<$type*:iterableComponentType(expr)$> $var2#2:regularExpression(concat(camelCase(type),var1,"Asc"),"get","By"):"name"$ = $expr$.stream()\
+                            .sorted(java.util.Comparator.comparing($type$::$var1#1:"get"$, java.util.Comparator.nullsLast(Comparator.naturalOrder())))\
+                            .collect(java.util.stream.Collectors.toList());
+.sortDesc : Collection倒序排序
+    java.util.Collection -> java.util.List<$type*:iterableComponentType(expr)$> $var2#2:regularExpression(concat(camelCase(type),var1,"Desc"),"get","By"):"name"$ = $expr$.stream()\
+                                .sorted(java.util.Comparator.comparing($type$::$var1#1:"get"$, java.util.Comparator.nullsFirst(Comparator.naturalOrder())).reversed())\
+                                .collect(java.util.stream.Collectors.toList());
+.toMap : Collection转Map
+    java.util.Collection -> java.util.Map<java.lang.String, $type*:iterableComponentType(expr)$> $name#2:"name")$ = $expr$.stream()\
+                                .collect(java.util.stream.Collectors.toMap($type$::$valueType#1:"get"$, java.util.function.Function.identity(), (v1, v2) -> v1));
+.reverse : 翻转给定List，会在原List基础上直接修改
+    java.util.List -> java.util.List<$type*:iterableComponentType(expr)$> reverse = cn.hutool.core.collection.CollUtil.reverse($expr$);
+.reverseNew : 翻转给定List，会创建一个新的List，原List数据不变
+    java.util.List -> java.util.List<$type*:iterableComponentType(expr)$> reverseNew = cn.hutool.core.collection.CollUtil.reverseNew($expr$);
+.partition : List集合分片
+    java.util.List -> java.util.List<List<$type*:iterableComponentType(expr)$>> $name#2:concat(expr,"Partition")$ = com.google.common.collect.Lists.partition($expr$, $size#1::"50"$);
+.forIterator : Collection for循环iterator
+    java.util.Collection -> for (java.util.Iterator<$type*:iterableComponentType(expr)$> iterator = $expr$.iterator(); iterator.hasNext(); ) {\
+                                $type$ next = iterator.next();\
+                                $END$\
+                            }
+# end -*-*-*-*-*-*-*-*-*- Collection相关 -*-*-*-*-*-*-*-*-*- end
+
+
+# start -*-*-*-*-*-*-*-*-*- Map相关 -*-*-*-*-*-*-*-*-*- start
+.map : 生成一个Key为给定类型的HashMap
+    CLASS -> java.util.Map<$expr$, $valueType:"java.lang.String"$> $name:concat(camelCase(valueType),"MapBy")$$END$ = com.google.common.collect.Maps.newHashMap();
+# end -*-*-*-*-*-*-*-*-*- Map相关 -*-*-*-*-*-*-*-*-*- end
+
+
+# start -*-*-*-*-*-*-*-*-*- Boolean相关 -*-*-*-*-*-*-*-*-*- start
+.ifTrue : 是否为True
+    BOOLEAN -> if(org.apache.commons.lang3.BooleanUtils.isTrue($expr$)){\
+                           $END$\
+                         }
+.ifFalse : 是否为False
+    BOOLEAN -> if(org.apache.commons.lang3.BooleanUtils.isFalse($expr$)){\
+                           $END$\
+                         }
+# end -*-*-*-*-*-*-*-*-*- Boolean相关 -*-*-*-*-*-*-*-*-*- end
+
+
+# start -*-*-*-*-*-*-*-*-*- 日期、时间相关 -*-*-*-*-*-*-*-*-*- start
+.format : 格式化时间为字符串
+    java.util.Date -> cn.hutool.core.date.DateUtil.format($expr$, cn.hutool.core.date.DatePattern.NORM_DATETIME_PATTERN)
+.toDate : 将日期字符串转换为Date对象
+    java.lang.String -> cn.hutool.core.date.DateUtil.parse($expr$)
+.addMilliseconds : 向Date添加毫秒，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addMilliseconds($expr$, $amount:"1"$);
+.addSeconds : Date增加秒，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addSeconds($expr$, $amount:"1"$);
+.addMinutes : Date增加分钟，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addMinutes($expr$, $amount:"1"$);
+.addHours : Date增加小时，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addHours($expr$, $amount:"1"$);
+.addDays : Date增加天，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addDays($expr$, $amount:"1"$);
+.addWeeks : Date增加周，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addWeeks($expr$, $amount:"1"$);
+.addMonths : Date增加月，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addMonths($expr$, $amount:"1"$);
+.addYears : Date增加年，负数为减
+    java.util.Date -> org.apache.commons.lang3.time.DateUtils.addYears($expr$, $amount:"1"$);
+# end -*-*-*-*-*-*-*-*-*- 日期、时间相关 -*-*-*-*-*-*-*-*-*- end
+
+
+# start -*-*-*-*-*-*-*-*-*- 日志相关 -*-*-*-*-*-*-*-*-*- start
+.logi : log日志打印，info级别
+    java.lang.Throwable -> [SKIP]
+    NON_VOID -> log.info("$expr$ = {}", $expr$$iftojson$);
+.logw : log日志打印，warn级别
+    java.lang.Throwable -> [SKIP]
+    NON_VOID -> log.warn("$expr$ = {}", $expr$$iftojson$);
+.loge : log日志打印，error级别
+    java.lang.Throwable -> [SKIP]
+    NON_VOID -> log.error("$expr$ = {}", $expr$$iftojson$);
+.logException : 打印异常堆栈信息
+    java.lang.Throwable -> log.error("$className*:className()$::$methodName*:methodName()$ exception, case is: {}", org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace($expr$));
+# end -*-*-*-*-*-*-*-*-*- 日志相关 -*-*-*-*-*-*-*-*-*- end
+
+
+# start -*-*-*-*-*-*-*-*-*- 数字相关 -*-*-*-*-*-*-*-*-*- start
+.toByte : 转换为byte
+    java.lang.String -> Byte.parseByte($expr$)
+    java.lang.Number -> $expr$.byteValue()
+    NUMBER           -> ((byte) ($expr$))
+.toShort : 转换为short
+    java.lang.String -> Short.parseShort($expr$)
+    java.lang.Number -> $expr$.shortValue()
+    NUMBER           -> ((short) ($expr$))
+.toChar : 转换为char
+    java.lang.String -> $expr$.charAt(0)
+    NUMBER           -> ((char) ($expr$))
+.toInt : 转换为int
+    java.lang.String -> Integer.parseInt($expr$)
+    java.lang.Number -> $expr$.intValue()
+    NUMBER           -> ((int) ($expr$))
+.toLong : 转换为long
+    java.lang.String -> Long.parseLong($expr$)
+    java.lang.Number -> $expr$.longValue()
+    NUMBER           -> ((long) ($expr$))
+.toFloat : 转换为float
+    java.lang.String -> Float.parseFloat($expr$)
+    java.lang.Number -> $expr$.floatValue()
+    NUMBER           -> ((float) ($expr$))
+.toDouble : 转换为double
+    java.lang.String -> Double.parseDouble($expr$)
+    java.lang.Number -> $expr$.doubleValue()
+    NUMBER           -> ((double) ($expr$))
+.toBigDecimal : 转换为BigDecimal
+    java.lang.String -> new java.math.BigDecimal($expr$)
+    java.lang.Number -> new java.math.BigDecimal($expr$)
+    NUMBER           -> new java.math.BigDecimal($expr$)
+# end -*-*-*-*-*-*-*-*-*- 数字相关 -*-*-*-*-*-*-*-*-*- end
+
+
+# start -*-*-*-*-*-*-*-*-*- 其他 -*-*-*-*-*-*-*-*-*- start
+.pair : 临时对象(两个)
+    CLASS -> org.apache.commons.lang3.tuple.ImmutablePair<$expr$, String> pair = ImmutablePair.of(null, null);
+.triple : 临时对象(三个)
+    CLASS -> org.apache.commons.lang3.tuple.ImmutableTriple<$expr$, String, String> triple = ImmutableTriple.of(null, null, null);
+.sleep : 线程休眠，默认单位(毫秒)
+    NUMBER -> cn.hutool.core.thread.ThreadUtil.sleep($expr$, java.util.concurrent.TimeUnit.MILLISECONDS);
+.toJSONString : 对象转JSON字符串
+    java.lang.String -> [SKIP]
+    NON_VOID -> com.alibaba.fastjson.JSON.toJSONString($expr$)
+# end -*-*-*-*-*-*-*-*-*- 其他 -*-*-*-*-*-*-*-*-*- end
+
+
+.test : 测试
+    ANY -> $name:regularExpression("getName", "get", "By")$
+
+
